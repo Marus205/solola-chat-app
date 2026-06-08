@@ -1,0 +1,29 @@
+name: solola_flutter_secure
+description: Solola secure chat Flutter frontend with FastAPI backend.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.17.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  http: ^0.13.6
+  web_socket_channel: ^2.4.0
+  shared_preferences: ^2.2.3
+  file_picker: ^6.1.1
+  url_launcher: ^6.2.6
+  cryptography: ^2.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.3
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/solola_logo.png

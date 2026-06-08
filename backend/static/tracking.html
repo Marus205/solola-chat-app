@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Solola Tracking Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    *{box-sizing:border-box}
+    :root{--blue:#2563eb;--bg:#eef5ff;--panel:#fff;--line:#d8e4f7;--text:#0f172a;--muted:#64748b;--red:#dc2626;--green:#16a34a;--purple:#7c3aed}
+    body{margin:0;background:linear-gradient(135deg,#eff6ff,#fff);color:var(--text);font-family:Arial,sans-serif}
+    header{padding:24px 34px;background:#fff;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:14px;position:sticky;top:0;z-index:5}
+    h1{font-size:32px;margin:0;color:var(--blue)} h2{margin:0 0 14px}.muted{color:var(--muted)}
+    a{color:var(--blue);text-decoration:none;font-weight:700}
+    main{padding:24px;max-width:1500px;margin:0 auto}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:22px;margin:18px 0;box-shadow:0 14px 40px rgba(37,99,235,.08)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+    .stat{background:#f8fbff;border:1px solid var(--line);border-radius:18px;padding:16px}
+    .stat b{display:block;font-size:28px;color:var(--blue)} .stat span{color:var(--muted);font-weight:700}
+    table{width:100%;border-collapse:collapse;border-radius:16px;overflow:hidden;background:#fff}
+    th,td{border-bottom:1px solid var(--line);padding:12px;text-align:left;vertical-align:top;font-size:14px}
+    th{background:#eaf2ff;color:#1e3a8a;position:sticky;top:82px}
+    code{display:block;background:#eff6ff;color:#1d4ed8;padding:10px;border-radius:12px;word-break:break-all;border:1px solid #dbeafe;max-height:120px;overflow:auto}
+    .pill{display:inline-block;padding:4px 9px;border-radius:999px;background:#dbeafe;color:#1d4ed8;font-size:12px;font-weight:700}
+    .encrypted{color:var(--purple);font-weight:700}.deleted{color:var(--red);font-weight:700}.same-name{color:#d97706;font-weight:700}
+    .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+    input,select,button{font:inherit;border-radius:13px;border:1px solid var(--line);padding:11px;background:#fff}
+    button{cursor:pointer;font-weight:800;color:#fff;background:var(--blue);border-color:var(--blue)}
+    button.secondary{background:#eef5ff;color:var(--blue);border-color:var(--line)}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .login-screen{min-height:100vh;display:grid;place-items:center;padding:22px}
+    .login-box{width:min(520px,94vw);background:#fff;border:1px solid var(--line);border-radius:28px;padding:32px;box-shadow:0 20px 70px rgba(15,23,42,.14)}
+    .login-box h1{margin-bottom:8px}.login-box input{width:100%;margin:12px 0}.login-box button{width:100%}
+    #app{display:none}.error{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:14px;padding:12px;margin-top:10px}
+    .tabbar{display:flex;gap:8px;flex-wrap:wrap}.tabbar button{background:#eef5ff;color:#1d4ed8;border-color:var(--line)}.tabbar button.active{background:var(--blue);color:#fff}
+    @media print{
+      header,.filters,.actions,.tabbar,.login-screen{display:none!important}
+      main{padding:0;max-width:none}
+      .card{box-shadow:none;border:1px solid #ddd;break-inside:avoid}
+      th{position:static}
+      body{background:#fff}
+    }
+  </style>
+</head>
+<body>
+  <section id="login" class="login-screen">
+    <form class="login-box">
+      <h1>Solola Tracking</h1>
+      <p class="muted">Accès administrateur requis. Code par défaut : <b>1234</b>. Il peut ensuite être changé directement depuis cette interface.</p>
+      <input id="adminCode" type="password" placeholder="Code administrateur">
+      <button id="loginBtn">Entrer</button>
+      <div id="loginError"></div>
+    </form>
+  </section>
+
+  <section id="app">
+    <header>
+      <div>
+        <h1>Solola Tracking Admin</h1>
+        <p class="muted">Dashboard, audit, messages, fichiers, statuts et exports.</p>
+      </div>
+      <div class="actions">
+        <a href="/">← Solola</a>
+        <button class="secondary" id="changeAdminCodeBtn">Changer code admin</button>
+        <button class="secondary" id="logoutBtn">Déconnexion tracking</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="card">
+        <div class="tabbar">
+          <button data-tab="dashboard" class="active">Dashboard</button>
+          <button data-tab="messages">Messages</button>
+          <button data-tab="files">Fichiers</button>
+          <button data-tab="statuses">Statuts</button>
+          <button data-tab="audit">Audit</button>
+        </div>
+      </section>
+
+      <section id="dashboard" class="card tab">
+        <h2>Tableau de bord</h2>
+        <div id="dashboardContent">Chargement...</div>
+      </section>
+
+      <section id="messages" class="card tab" style="display:none">
+        <h2>Messages</h2>
+        <div class="filters">
+          <input id="q" placeholder="Recherche">
+          <select id="type"><option value="">Tous types</option><option value="text">Texte</option><option value="encrypted_text">Message chiffré</option><option value="file">Fichier</option><option value="encrypted_file">Fichier chiffré</option></select>
+          <select id="secure"><option value="">Normal + sécurisé</option><option value="yes">Conversations sécurisées</option><option value="no">Conversations normales</option></select>
+          <input id="date" type="date">
+          <select id="deleted"><option value="">Avec/sans supprimés</option><option value="no">Non supprimés</option><option value="yes">Supprimés</option></select>
+        </div>
+        <div class="actions">
+          <button id="csvMessages">Exporter messages CSV</button>
+          <button id="pdfReport">Exporter rapport PDF</button>
+        </div>
+        <div id="messagesBox">Chargement...</div>
+      </section>
+
+      <section id="files" class="card tab" style="display:none">
+        <h2>Fichiers</h2>
+        <div class="actions"><button id="csvFiles">Exporter fichiers CSV</button></div>
+        <div id="filesBox">Chargement...</div>
+      </section>
+
+      <section id="statuses" class="card tab" style="display:none">
+        <h2>Statuts publiés</h2>
+        <div class="actions"><button id="csvStatuses">Exporter statuts CSV</button></div>
+        <div id="statusesBox">Chargement...</div>
+      </section>
+
+      <section id="audit" class="card tab" style="display:none">
+        <h2>Journal d’audit</h2>
+        <p class="muted">Connexions, création de conversations, groupes, fichiers, statuts, lecture, suppression et modifications sensibles.</p>
+        <div class="actions"><button id="csvAudit">Exporter audit CSV</button></div>
+        <div id="auditBox">Chargement...</div>
+      </section>
+    </main>
+  </section>
+
+  <script>
+    let messages=[], files=[], statuses=[], audit=[], dashboard=null;
+    const tokenKey = "solola_tracking_token";
+    const token = () => localStorage.getItem(tokenKey);
+    const h = () => ({"X-Admin-Token": token() || ""});
+
+    function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[s]));}
+    function parseEncrypted(content){try{const d=JSON.parse(content); if(d && d.encrypted) return d;}catch{} return null;}
+    async function sha256Text(text){const bytes=new TextEncoder().encode(text||""); const hash=await crypto.subtle.digest("SHA-256",bytes); return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,"0")).join("");}
+    async function getJSON(url){const r=await fetch(url,{headers:h()}); if(r.status===401){logout(); throw new Error("Accès tracking refusé");} if(!r.ok) throw new Error(await r.text()); return r.json();}
+    function csvDownload(name, rows){const csv=rows.map(r=>r.map(v=>`"${String(v??"").replaceAll('"','""')}"`).join(",")).join("\n"); const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href);}
+    function logout(){localStorage.removeItem(tokenKey); document.getElementById("app").style.display="none"; document.getElementById("login").style.display="grid";}
+
+    document.getElementById("loginBtn").onclick=async e=>{
+      e.preventDefault();
+      document.getElementById("loginError").innerHTML="";
+      try{
+        const code=document.getElementById("adminCode").value.trim();
+        const r=await fetch("/tracking/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code})});
+        const data=await r.json();
+        if(!r.ok) throw new Error(data.detail || "Code incorrect");
+        localStorage.setItem(tokenKey,data.admin_token);
+        await loadAll();
+        showApp();
+      }catch(err){document.getElementById("loginError").innerHTML=`<div class="error">${escapeHtml(err.message)}</div>`;}
+    };
+    document.getElementById("logoutBtn").onclick=logout;
+    document.getElementById("changeAdminCodeBtn").onclick=changeAdminCode;
+
+    async function changeAdminCode(){
+      const current_code = prompt("Code administrateur actuel :");
+      if(!current_code) return;
+      const new_code = prompt("Nouveau code administrateur, minimum 4 caractères :");
+      if(!new_code) return;
+      if(new_code.trim().length < 4){ alert("Le nouveau code doit contenir au moins 4 caractères."); return; }
+      try{
+        const r = await fetch("/tracking/admin-code", {
+          method:"PATCH",
+          headers: {"Content-Type":"application/json", ...h()},
+          body: JSON.stringify({current_code, new_code:new_code.trim()})
+        });
+        const data = await r.json();
+        if(!r.ok) throw new Error(data.detail || "Modification impossible");
+        localStorage.setItem(tokenKey, data.admin_token);
+        alert("Code administrateur modifié. Utilise le nouveau code à la prochaine connexion.");
+      }catch(err){
+        alert(err.message);
+      }
+    }
+
+    function showApp(){document.getElementById("login").style.display="none";document.getElementById("app").style.display="block";}
+    document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-tab]").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".tab").forEach(t=>t.style.display="none");document.getElementById(b.dataset.tab).style.display="block";});
+
+    async function loadAll(){
+      [dashboard,messages,files,statuses,audit]=await Promise.all([
+        getJSON("/tracking/dashboard"), getJSON("/tracking/messages"), getJSON("/tracking/files"), getJSON("/tracking/statuses"), getJSON("/tracking/audit")
+      ]);
+      renderDashboard(); await renderMessages(); renderFiles(); renderStatuses(); renderAudit();
+    }
+
+    function renderDashboard(){
+      const t=dashboard.totals;
+      document.getElementById("dashboardContent").innerHTML=`
+        <div class="grid">
+          ${Object.entries(t).map(([k,v])=>`<div class="stat"><b>${v}</b><span>${escapeHtml(k.replaceAll("_"," "))}</span></div>`).join("")}
+        </div>
+        <h3>Utilisateurs les plus actifs</h3>
+        <table><thead><tr><th>Utilisateur</th><th>Numéro</th><th>Messages</th></tr></thead><tbody>
+          ${dashboard.top_users.map(u=>`<tr><td>${escapeHtml(u.pseudo)}</td><td>${escapeHtml(u.phone_number)}</td><td>${u.total}</td></tr>`).join("")}
+        </tbody></table>
+        <h3>Derniers événements audit</h3>
+        <table><thead><tr><th>Heure</th><th>Action</th><th>Utilisateur</th><th>Détails</th></tr></thead><tbody>
+          ${dashboard.recent_audit.map(a=>`<tr><td>${new Date(a.created_at).toLocaleString()}</td><td>${escapeHtml(a.action)}</td><td>${escapeHtml(a.pseudo||"Système")}</td><td><code>${escapeHtml(a.details||"")}</code></td></tr>`).join("")}
+        </tbody></table>`;
+    }
+
+    function filteredMessages(){
+      const q=document.getElementById("q").value.toLowerCase();
+      const type=document.getElementById("type").value;
+      const secure=document.getElementById("secure").value;
+      const date=document.getElementById("date").value;
+      const deleted=document.getElementById("deleted").value;
+      return messages.filter(m=>{
+        const blob=JSON.stringify(m).toLowerCase();
+        if(q && !blob.includes(q)) return false;
+        if(type && m.message_type!==type) return false;
+        if(secure==="yes" && !m.conversation_is_secure) return false;
+        if(secure==="no" && m.conversation_is_secure) return false;
+        if(date && !m.created_at.startsWith(date)) return false;
+        if(deleted==="yes" && !m.deleted_at) return false;
+        if(deleted==="no" && m.deleted_at) return false;
+        return true;
+      });
+    }
+
+    async function renderMessages(){
+      const rows=await Promise.all(filteredMessages().map(async m=>{
+        const encrypted=parseEncrypted(m.content);
+        const hash=encrypted?await sha256Text(encrypted.ciphertext):"";
+        return `<tr>
+          <td>${new Date(m.created_at).toLocaleString()}${m.deleted_at?`<br><span class="deleted">supprimé</span>`:""}</td>
+          <td>${escapeHtml(m.pseudo)}<br><span class="muted">${escapeHtml(m.phone_number)}</span></td>
+          <td>${escapeHtml(m.conversation_title)} #${m.conversation_id}${m.conversation_is_secure?' <span class="pill">sécurisée</span>':''}</td>
+          <td>${m.message_type==="encrypted_text"?'<span class="encrypted">message chiffré</span>':escapeHtml(m.message_type)}<br>${escapeHtml(m.status||"")}</td>
+          <td>${encrypted?`<span class="pill">${escapeHtml(encrypted.mode||"encrypted")} · AES-GCM</span><p><b>Indice :</b> ${escapeHtml(encrypted.hint||m.conversation_security_hint||"Aucun")}</p><p><b>Hash message chiffré :</b></p><code>${hash}</code><p><b>Contenu stocké :</b></p><code>${escapeHtml(encrypted.ciphertext)}</code>`:escapeHtml(m.content||"")}</td>
+        </tr>`;
+      }));
+      document.getElementById("messagesBox").innerHTML=`<table><thead><tr><th>Heure</th><th>Utilisateur</th><th>Conversation</th><th>Type</th><th>Contenu stocké</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
+    }
+
+    function renderFiles(){
+      const names={}; for(const f of files) names[f.original_filename]=(names[f.original_filename]||0)+1;
+      document.getElementById("filesBox").innerHTML=files.length?files.map(f=>`<div class="card"><h3>${escapeHtml(f.original_filename)} ${names[f.original_filename]>1?'<span class="same-name">(nom répété)</span>':''}</h3><p><b>Premier déposant :</b> ${escapeHtml(f.first_uploader.pseudo)} / ${escapeHtml(f.first_uploader.phone_number)}</p><p><b>Heure :</b> ${new Date(f.first_uploaded_at).toLocaleString()}</p><p><b>Conversation :</b> ${f.first_conversation_id}</p><p><b>SHA-256 :</b></p><code>${f.file_hash}</code></div>`).join(""):"<p>Aucun fichier.</p>";
+    }
+
+    function renderStatuses(){
+      document.getElementById("statusesBox").innerHTML=statuses.length?`<table><thead><tr><th>Heure</th><th>Utilisateur</th><th>Légende</th><th>Fichier</th><th>SHA-256</th></tr></thead><tbody>${statuses.map(s=>`<tr><td>${new Date(s.created_at).toLocaleString()}</td><td>${escapeHtml(s.pseudo)}<br><span class="muted">${escapeHtml(s.phone_number)}</span></td><td>${escapeHtml(s.caption||"")}</td><td>${escapeHtml(s.original_filename)}<br>${s.size} octets</td><td><code>${escapeHtml(s.file_hash)}</code></td></tr>`).join("")}</tbody></table>`:"<p>Aucun statut.</p>";
+    }
+
+    function renderAudit(){
+      document.getElementById("auditBox").innerHTML=audit.length?`<table><thead><tr><th>Heure</th><th>Utilisateur</th><th>Action</th><th>Détails</th></tr></thead><tbody>${audit.map(a=>`<tr><td>${new Date(a.created_at).toLocaleString()}</td><td>${escapeHtml(a.pseudo||"Système")}<br><span class="muted">${escapeHtml(a.phone_number||"")}</span></td><td>${escapeHtml(a.action)}</td><td><code>${escapeHtml(a.details||"")}</code></td></tr>`).join("")}</tbody></table>`:"<p>Aucun audit.</p>";
+    }
+
+    ["q","type","secure","date","deleted"].forEach(id=>document.getElementById(id).oninput=renderMessages);
+    document.getElementById("csvMessages").onclick=()=>csvDownload("solola_messages.csv",[["heure","utilisateur","numero","conversation","type","secure","supprime","contenu"],...filteredMessages().map(m=>[m.created_at,m.pseudo,m.phone_number,m.conversation_title,m.message_type,m.conversation_is_secure,m.deleted_at||"",m.content||""])]);
+    document.getElementById("csvFiles").onclick=()=>csvDownload("solola_files.csv",[["nom","sha256","premier_deposant","numero","heure","taille"],...files.map(f=>[f.original_filename,f.file_hash,f.first_uploader.pseudo,f.first_uploader.phone_number,f.first_uploaded_at,f.size])]);
+    document.getElementById("csvStatuses").onclick=()=>csvDownload("solola_statuses.csv",[["heure","utilisateur","numero","legende","fichier","sha256"],...statuses.map(s=>[s.created_at,s.pseudo,s.phone_number,s.caption,s.original_filename,s.file_hash])]);
+    document.getElementById("csvAudit").onclick=()=>csvDownload("solola_audit.csv",[["heure","utilisateur","numero","action","details"],...audit.map(a=>[a.created_at,a.pseudo||"Système",a.phone_number||"",a.action,a.details||""])]);
+    document.getElementById("pdfReport").onclick=()=>window.print();
+
+    if(token()){loadAll().then(showApp).catch(logout);}
+  </script>
+</body>
+</html>

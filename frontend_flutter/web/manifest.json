@@ -1,0 +1,10 @@
+{
+  "name": "Solola",
+  "short_name": "Solola",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F3F7FF",
+  "theme_color": "#2563EB",
+  "description": "Messagerie sécurisée Solola",
+  "orientation": "portrait-primary"
+}
